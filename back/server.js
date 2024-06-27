@@ -185,23 +185,3 @@ app.get("/admin/listUsers", verifyAdmin, (req, res) => {
         return res.json(rows);
     });
 });
-
-// Fonction d'addition non sécurisée
-app.post("/addUnsecured", (req, res) => {
-    const { a, b } = req.body;
-    if (typeof a !== 'number' || typeof b !== 'number') {
-        return res.status(400).json({ error: "Both a and b must be numbers" });
-    }
-    const sum = a + b;
-    res.json({ result: sum });
-});
-
-// Fonction d'addition sécurisée
-app.post("/addSecured", authenticateToken, (req, res) => {
-    const { a, b } = req.body;
-    if (typeof a !== 'number' || typeof b !== 'number') {
-        return res.status(400).json({ error: "Both a and b must be numbers" });
-    }
-    const sum = a + b;
-    res.json({ result: sum });
-});
