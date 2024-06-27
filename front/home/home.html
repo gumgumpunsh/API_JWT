@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion et Inscription</title>
+    <link rel="stylesheet" href="./HomeStyles.css">
+</head>
+<body>
+<div class="message">
+    Connexion réussie !
+</div>
+<div class="container">
+    <div class="toggle-buttons">
+        <button id="showRegister">Ajouter un utilisateur</button>
+    </div>
+    <div class="form-container" id="registerFormContainer">
+        <h2>Inscription</h2>
+        <form id="registerForm">
+            <label for="registerUsername">Nom d'utilisateur:</label>
+            <input type="text" id="registerUsername" name="username" required>
+            <label for="registerPassword">Mot de passe:</label>
+            <input type="password" id="registerPassword" name="password" required>
+            <button type="submit">S'inscrire</button>
+        </form>
+    </div>
+</div>
+<h1>Liste des utilisateurs</h1>
+<ul id="userList"></ul>
+<script src="./HomeScripts.js"></script>
+</body>
+</html>

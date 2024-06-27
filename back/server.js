@@ -4,8 +4,10 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 
 // Configuration globale via dotenv
 dotenv.config();
