@@ -11,7 +11,6 @@ COPY . .
 RUN npm install
 
 # Copier le contenu du dossier back
-COPY . /usr/src/app/back
 
 # Exposer le port sur lequel l'application s'exécute
 EXPOSE 5000
