@@ -25,7 +25,7 @@ document.getElementById('registerForm').addEventListener('submit', function (e) 
         }
     `;
 
-    fetch('http://localhost:5000/graphql', {
+    fetch(process.env.URL_GRAPHQL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
 
-    fetch('http://localhost:5000/graphql', {
+    fetch(process.env.URL_GRAPHQL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -15,7 +15,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
         }
     `;
 
-    fetch('http://localhost:5000/graphql', {
+    fetch(process.env.URL_GRAPHQL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
