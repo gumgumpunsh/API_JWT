@@ -25,7 +25,7 @@ document.getElementById('registerForm').addEventListener('submit', function (e) 
         }
     `;
 
-    fetch(process.env.URL_GRAPHQL, {
+    fetch("https://api-jwt-55p0.onrender.com/graphql", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
 
-    fetch(process.env.URL_GRAPHQL, {
+    fetch("https://api-jwt-55p0.onrender.com/graphql", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ function deleteUser(username, token) {
         }
     `;
 
-    fetch('http://localhost:5000/graphql', {
+    fetch("https://api-jwt-55p0.onrender.com/graphql", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
