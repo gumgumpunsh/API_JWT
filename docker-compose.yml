@@ -1,18 +1,19 @@
 version: '3.9'
 
 services:
-  app:
-    build: .
+  back:
+    build: ./back
     ports:
       - "5000:5000"
     volumes:
-      - ./back:/usr/src/app
+      - ./back:/usr/src/app/back
+      - /usr/src/app/node_modules
     environment:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-    depends_on:
-      - db
 
-  db:
-    image: nouchka/sqlite3
-    volumes:
-      - ./database:/data
+  front:
+    build: ./front
+    depends_on:
+      - back
+    ports:
+      - "8080:80"

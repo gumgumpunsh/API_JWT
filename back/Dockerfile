@@ -11,10 +11,10 @@ COPY . .
 RUN npm install
 
 # Copier le contenu du dossier back
-COPY ./back /usr/src/app/back
+COPY . /usr/src/app/back
 
 # Exposer le port sur lequel l'application s'exécute
 EXPOSE 5000
 
 # Commande pour démarrer l'application
-CMD ["node", "back/server.js"]
+CMD ["node", "server.js"]
