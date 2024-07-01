@@ -4,8 +4,12 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const cors = require('cors');
+const { graphqlHTTP } = require('express-graphql');
+const { buildSchema } = require('graphql');
 
 const app = express();
+app.use(cors());
 
 // Configuration globale via dotenv
 dotenv.config();
@@ -184,22 +188,150 @@ app.get("/admin/listUsers", verifyAdmin, (req, res) => {
     });
 });
 
-// Fonction d'addition non sécurisée
-app.post("/addUnsecured", (req, res) => {
-    const { a, b } = req.body;
-    if (typeof a !== 'number' || typeof b !== 'number') {
-        return res.status(400).json({ error: "Both a and b must be numbers" });
-    }
-    const sum = a + b;
-    res.json({ result: sum });
-});
+// ---- GraphQL Setup ----
 
-// Fonction d'addition sécurisée
-app.post("/addSecured", authenticateToken, (req, res) => {
-    const { a, b } = req.body;
-    if (typeof a !== 'number' || typeof b !== 'number') {
-        return res.status(400).json({ error: "Both a and b must be numbers" });
+// Define GraphQL schema
+const schema = buildSchema(`
+    type Token {
+        token: String
     }
-    const sum = a + b;
-    res.json({ result: sum });
-});
+    
+    type User {
+        id: ID!
+        username: String!
+        password: String!
+    }
+
+    type Query {
+        listUsers: [User]
+    }
+
+    type Mutation {
+        generateToken(username: String!, password: String!): Token
+        addUser(username: String!, password: String!): User
+        deleteUser(username: String!): String
+    }
+`);
+
+// Define GraphQL resolvers
+const root = {
+    generateToken: ({ username, password }) => {
+        return new Promise((resolve, reject) => {
+            db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
+                if (err || !user) {
+                    return reject(new Error("Nom d’utilisateur ou mot de passe incorrect"));
+                }
+
+                bcrypt.compare(password, user.password, (err, result) => {
+                    if (err || !result) {
+                        return reject(new Error("Nom d’utilisateur ou mot de passe incorrect"));
+                    }
+
+                    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+                    resolve({ token });
+                });
+            });
+        });
+    },
+    listUsers: (args, context) => {
+        return new Promise((resolve, reject) => {
+            const token = context.headers['x-access-token'];
+            if (!token) {
+                reject(new Error("Token is required"));
+            }
+
+            jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+                if (err) {
+                    reject(new Error("Invalid Token"));
+                } else if (decoded.username !== 'admin') {
+                    reject(new Error("Admin privileges required"));
+                } else {
+                    db.all("SELECT id, username, password FROM users", [], (err, rows) => {
+                        if (err) {
+                            reject(new Error("Internal server error"));
+                        }
+                        resolve(rows);
+                    });
+                }
+            });
+        });
+    },
+    addUser: ({ username, password }, context) => {
+        return new Promise((resolve, reject) => {
+            const token = context.headers['x-access-token'];
+            if (!token) {
+                reject(new Error("Token is required"));
+            }
+
+            jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+                if (err) {
+                    reject(new Error("Invalid Token"));
+                } else if (decoded.username !== 'admin') {
+                    reject(new Error("Admin privileges required"));
+                } else {
+                    db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
+                        if (err) {
+                            reject(new Error("Internal server error"));
+                        }
+
+                        if (user) {
+                            reject(new Error("Username already exists"));
+                        }
+
+                        const saltRounds = 10;
+                        bcrypt.hash(password, saltRounds, (err, hash) => {
+                            if (err) {
+                                reject(new Error("Internal server error"));
+                            }
+
+                            const stmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+                            stmt.run(username, hash, function(err) {
+                                if (err) {
+                                    reject(new Error("Error creating user"));
+                                }
+                                resolve({ id: this.lastID, username, password: hash });
+                            });
+                            stmt.finalize();
+                        });
+                    });
+                }
+            });
+        });
+    },
+    deleteUser: ({ username }, context) => {
+        return new Promise((resolve, reject) => {
+            const token = context.headers['x-access-token'];
+            if (!token) {
+                reject(new Error("Token is required"));
+            }
+
+            jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+                if (err) {
+                    reject(new Error("Invalid Token"));
+                } else if (decoded.username !== 'admin') {
+                    reject(new Error("Admin privileges required"));
+                } else if (username === 'admin') {
+                    reject(new Error("Cannot delete admin user"));
+                } else {
+                    const stmt = db.prepare("DELETE FROM users WHERE username = ?");
+                    stmt.run(username, (err) => {
+                        if (err) {
+                            reject(new Error("Error deleting user"));
+                        } else {
+                            resolve("User deleted successfully");
+                        }
+                    });
+                    stmt.finalize();
+                }
+            });
+        });
+    }
+};
+
+// Setup GraphQL endpoint
+app.use('/graphql', graphqlHTTP((req, res) => ({
+    schema: schema,
+    rootValue: root,
+    graphiql: true,
+    context: { headers: req.headers }
+})));
