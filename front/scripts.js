@@ -7,21 +7,29 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
 
-    fetch('http://localhost:5000/user/generateToken', {
+    const query = `
+        mutation {
+            generateToken(username: "${username}", password: "${password}") {
+                token
+            }
+        }
+    `;
+
+    fetch('http://localhost:5000/graphql', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ query }),
     })
         .then(response => response.json())
         .then(data => {
-            if (data.token) {
+            if (data.data && data.data.generateToken && data.data.generateToken.token) {
                 alert('Connexion réussie !');
-                localStorage.setItem('token', data.token);
+                localStorage.setItem('token', data.data.generateToken.token);
 
                 // Rediriger l'utilisateur vers la Home page
-                window.location.href = 'home/home.html'
+                window.location.href = 'home/home.html';
             } else {
                 alert('Nom d’utilisateur ou mot de passe incorrect');
             }

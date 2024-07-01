@@ -16,17 +16,28 @@ document.getElementById('registerForm').addEventListener('submit', function (e) 
     const username = document.getElementById('registerUsername').value;
     const password = document.getElementById('registerPassword').value;
 
-    fetch('http://localhost:5000/admin/addUser', {
+    const mutation = `
+        mutation {
+            addUser(username: "${username}", password: "${password}") {
+                id
+                username
+            }
+        }
+    `;
+
+    fetch('http://localhost:5000/graphql', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'x-access-token': `${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ query: mutation }),
     })
-        .then(response => {
-            if (response.ok) {
+        .then(response => response.json())
+        .then(data => {
+            if (data.data && data.data.addUser) {
                 alert('Inscription réussie !');
+                location.reload(); // Recharger la page pour mettre à jour la liste des utilisateurs
             } else {
                 alert('Erreur lors de l\'inscription');
             }
@@ -43,14 +54,29 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    fetch('http://localhost:5000/admin/listUsers', {
-        method: 'GET',
-        headers: {
-            'x-access-token': `${localStorage.getItem('token')}`
+    const query = `
+        query {
+            listUsers {
+                id
+                username
+            }
         }
+    `;
+
+    fetch('http://localhost:5000/graphql', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-access-token': `${token}`
+        },
+        body: JSON.stringify({ query }),
     })
         .then(response => response.json())
-        .then(users => {
+        .then(data => {
+            if (data.errors) {
+                throw new Error(data.errors[0].message);
+            }
+            const users = data.data.listUsers;
             const userList = document.getElementById('userList');
             users.forEach(user => {
                 const li = document.createElement('li');
@@ -78,18 +104,26 @@ function deleteUser(username, token) {
         return;
     }
 
-    fetch(`http://localhost:5000/user/delUser/${username}`, {
-        method: 'DELETE',
-        headers: {
-            'x-access-token': `${token}`
+    const mutation = `
+        mutation {
+            deleteUser(username: "${username}")
         }
+    `;
+
+    fetch('http://localhost:5000/graphql', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-access-token': `${token}`
+        },
+        body: JSON.stringify({ query: mutation }),
     })
         .then(response => response.json())
-        .then(result => {
-            if (result.error) {
-                alert(`Erreur : ${result.error}`);
+        .then(data => {
+            if (data.errors) {
+                alert(`Erreur : ${data.errors[0].message}`);
             } else {
-                alert(result.message);
+                alert(data.data.deleteUser);
                 location.reload(); // Recharger la page pour mettre à jour la liste des utilisateurs
             }
         })
